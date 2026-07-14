@@ -12,7 +12,6 @@ const sequelize = new Sequelize(
     }
 );
 
-// Authenticate database connection
 sequelize.authenticate()
     .then(() => {
         console.log('[PostgreSQL] Connection has been established successfully.');
