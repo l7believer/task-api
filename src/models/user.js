@@ -3,7 +3,7 @@ const sequelize = require('./index');
 
 const User = sequelize.define('User', {
     name: {
-        type: DataTypes.STRING,
+        type: DataTypes.STRING(100),
         allowNull: false
     },
     email: {

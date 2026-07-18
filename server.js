@@ -52,6 +52,25 @@ app.post('/api/users', async (req, res) => {
     }
 });
 
+// Xem chi tiết user
+app.get('/api/users/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const user = await User.findByPk(id);
+        
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        
+        res.status(200).json({
+            message: 'Retrieve user details successfully',
+            data: user
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 //In user theo trang
 app.get('/api/users', async (req, res) => {
     try {
@@ -148,28 +167,48 @@ app.post('/api/tasks', async (req, res) => {
     }
 });
 
-//In task theo trang
+// Xem chi tiết task (kèm tags)
+app.get('/api/tasks/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        const task = await Task.findByPk(id, {
+            include: [
+                {
+                    model: Tag,
+                    as: 'tags' 
+                }
+            ]
+        });
+
+        if (!task) return res.status(404).json({ error: 'Task not found' });
+
+        res.status(200).json({ 
+            message: 'Retrieve task details successfully', 
+            data: task 
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+//In task theo status/priority
 app.get('/api/tasks', async (req, res) => {
     try {
-        const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 10;
-        const offset = (page - 1) * limit;
+        const { status, priority } = req.query; 
+        
+        const whereClause = {};
+        if (status) whereClause.status = status;       
+        if (priority) whereClause.priority = priority; 
 
-        const { count, rows } = await Task.findAndCountAll({
-            limit: limit,
-            offset: offset,
+        const tasks = await Task.findAll({
+            where: whereClause,
             order: [['id', 'DESC']]
         });
 
         res.status(200).json({
             message: 'Retrieve tasks successfully',
-            data: rows,
-            pagination: {
-                totalItems: count,
-                totalPages: Math.ceil(count / limit),
-                currentPage: page,
-                limit: limit
-            }
+            data: tasks
         });
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -218,7 +257,7 @@ app.post('/api/tags', async (req, res) => {
         const { name, task_id } = req.body;
 
         if (!name || !task_id) {
-            return res.status(400).json({ error: 'Title and task_id are required' });
+            return res.status(400).json({ error: 'Name and task_id are required' });
         }
 
         const tag = await Tag.create({ name, task_id });
@@ -246,36 +285,6 @@ app.get('/api/tags', async (req, res) => {
             data: rows,
             pagination: { totalItems: count, totalPages: Math.ceil(count / limit), currentPage: page, limit }
         });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-//Cập nhật Tag
-app.put('/api/tags/:id', async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { name } = req.body;
-
-        const tag = await Tag.findByPk(id);
-        if (!tag) return res.status(404).json({ error: 'Tag not found' });
-
-        await tag.update({ name: name || tag.name });
-        res.status(200).json({ message: 'Tag updated successfully', data: tag });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-//Xóa Tag
-app.delete('/api/tags/:id', async (req, res) => {
-    try {
-        const { id } = req.params;
-        const tag = await Tag.findByPk(id);
-        if (!tag) return res.status(404).json({ error: 'Tag not found' });
-
-        await tag.destroy();
-        res.status(200).json({ message: 'Tag deleted successfully' });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
