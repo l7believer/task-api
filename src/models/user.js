@@ -1,4 +1,5 @@
 const { DataTypes } = require('sequelize');
+const bcrypt = require('bcrypt');
 const sequelize = require('./index');
 
 const User = sequelize.define('User', {
@@ -14,6 +15,15 @@ const User = sequelize.define('User', {
     password: {
         type: DataTypes.STRING,
         allowNull: false
+    }
+}, {
+    hooks: {
+        beforeSave: async (user) => {
+            if (user.changed('password')) {
+                const saltRounds = 10;
+                user.password = await bcrypt.hash(user.password, saltRounds);
+            }
+        }
     }
 });
 
